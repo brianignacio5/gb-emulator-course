@@ -1,0 +1,22 @@
+{
+  "name": "gb-emulator-course",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Learn to build a Game Boy (DMG) emulator in TypeScript — lesson by lesson",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:lesson": "node scripts/test-lesson.mjs",
+    "test:solutions": "node scripts/test-solutions.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2",
+    "vitest": "^3.0.9"
+  }
+}
