@@ -19,6 +19,7 @@ npm run dev              # canvas UI (from lesson 17)
 - `solutions/complete/` — full reference emulator
 - `solutions/NN-*/` — per-lesson snapshots
 - `roms/` — your `.gb` files (gitignored)
+- `fixtures/` — tiny synthetic test data (optional Blargg ROMs go in `fixtures/blargg/`, which stays gitignored)
 
 ## Files to edit
 
