@@ -72,12 +72,14 @@ export class Registers {
   }
   set hFlag(_on: boolean) {
     this.f = _on ? this.f | FLAG_H : this.f & ~FLAG_H;
+    this.f = this.f & 0xF0;
   }
   get cy(): boolean {
     return (this.f & FLAG_C) !== 0;
   }
   set cy(_on: boolean) {
     this.f = _on ? this.f | FLAG_C : this.f & ~FLAG_C;
+    this.f = this.f & 0xF0;
   }
 
   setFlags(_z: boolean, _n: boolean, _h: boolean, _c: boolean): void {
@@ -85,6 +87,7 @@ export class Registers {
     this.n = _n;
     this.hFlag = _h;
     this.cy = _c;
+    this.f = this.f & 0xF0;
   }
 
   resetPostBoot(): void {
