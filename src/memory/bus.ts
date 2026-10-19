@@ -24,8 +24,8 @@ export class Bus implements Memory {
   oam = new Uint8Array(0xa0);
   hram = new Uint8Array(0x7f);
   io = new Uint8Array(0x80);
-  ie = 0; // Interrupt Enable Register
-  ifFlag = 0xe1; // Interrupt Flag Register
+  ie = 0; // Interrupt Enable Register 04-Joypad 03-Serial 02-Timer 01-LCD 00- VBlack
+  ifFlag = 0xe1; // Interrupt Flag Register 04-Joypad 03-Serial 02-Timer 01-LCD 00- VBlack
   cartridge: CartridgeLike | null = null;
   handlers: IoHandlers = {};
 
