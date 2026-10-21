@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createCartridge } from '@emu/cartridge/index.js';
 import { parseCartridgeHeader } from '@emu/cartridge/header.js';
 import { RomOnlyCartridge } from '@emu/cartridge/romOnly.js';
 
@@ -29,5 +30,12 @@ describe('lesson 03 — cartridge header & ROM-only', () => {
     const cart = new RomOnlyCartridge(rom);
     expect(cart.read(0x0150)).toBe(0xab);
     expect(cart.read(0x4000)).toBe(0xcd);
+  });
+
+  it('factory maps a ROM-only cartridge', () => {
+    const rom = makeRom({ type: 0x00 });
+    rom[0x0150] = 0xab;
+    const cart = createCartridge(rom);
+    expect(cart.read(0x0150)).toBe(0xab);
   });
 });

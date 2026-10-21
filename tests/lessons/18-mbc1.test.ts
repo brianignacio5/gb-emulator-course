@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createCartridge } from '@emu/cartridge/index.js';
 import { Mbc1Cartridge } from '@emu/cartridge/mbc1.js';
 
 function romWithBanks(banks: number): Uint8Array {
@@ -22,5 +23,15 @@ describe('lesson 18 — MBC1', () => {
     cart.write(0x0000, 0x0a);
     cart.write(0xa000, 0x55);
     expect(cart.read(0xa000)).toBe(0x55);
+  });
+
+  it('factory maps MBC1', () => {
+    const rom = romWithBanks(8);
+    rom[0x147] = 0x01;
+    rom[0x148] = 0x02; // 8 banks
+    const cart = createCartridge(rom);
+    expect(cart.read(0x4000)).toBe(1);
+    cart.write(0x2000, 0x03);
+    expect(cart.read(0x4000)).toBe(3);
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createCartridge } from '@emu/cartridge/index.js';
 import { Mbc2Cartridge } from '@emu/cartridge/mbc2.js';
 import { Mbc3Cartridge } from '@emu/cartridge/mbc3.js';
 
@@ -25,5 +26,25 @@ describe('lesson 19 — MBC2 & MBC3', () => {
     cart.write(0x4000, 0x08); // RTC seconds
     cart.write(0xa000, 0x1e);
     expect(cart.read(0xa000)).toBe(0x1e);
+  });
+
+  it('factory maps MBC2', () => {
+    const rom = new Uint8Array(0x8000);
+    rom[0x147] = 0x05;
+    rom[0x148] = 0x00; // 2 banks
+    const cart = createCartridge(rom);
+    cart.write(0x0000, 0x0a);
+    cart.write(0xa000, 0xab);
+    expect(cart.read(0xa000) & 0x0f).toBe(0x0b);
+  });
+
+  it('factory maps MBC3', () => {
+    const rom = new Uint8Array(0x10000);
+    rom[0x147] = 0x10;
+    rom[0x148] = 0x01; // 4 banks
+    rom[0x8000] = 0x77; // bank 2
+    const cart = createCartridge(rom);
+    cart.write(0x2000, 0x02);
+    expect(cart.read(0x4000)).toBe(0x77);
   });
 });
