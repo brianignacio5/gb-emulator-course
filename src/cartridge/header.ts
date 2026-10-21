@@ -11,7 +11,56 @@ export interface CartridgeHeader {
   ramSizeBytes: number;
 }
 
+const ROM_BANKS: Record<number, number> = {
+  0x00: 2,
+  0x01: 4,
+  0x02: 8,
+  0x03: 16,
+  0x04: 32,
+  0x05: 64,
+  0x06: 128,
+  0x07: 256,
+  0x08: 512
+};
+
+const RAM_SIZE_BYTES: Record<number, number> = {
+  0x00: 0,
+  0x01: 2 * 1024,
+  0x02: 8 * 1024,
+  0x03: 32 * 1024,
+  0x04: 128 * 1024,
+  0x05: 64 * 1024,
+};
+
 /** Lesson 03 */
 export function parseCartridgeHeader(_rom: Uint8Array): CartridgeHeader {
-  throw new Error('TODO: lesson-03 implement parseCartridgeHeader');
+  if (_rom.length < 0x150) {
+    throw new Error('ROM too small to contain a cartridge header');
+  }
+  let title = '';
+  for (let i = 0x134; i <= 0x143; i++) {
+    const c = _rom[i]!;
+    if (c === 0) break;
+    if (c >= 0x20 && c <= 0x7e) title += String.fromCharCode(c);
+  }
+  const cartType = _rom[0x0147];
+  const romSizeCode = _rom[0x0148];
+  const ramSizeCode = _rom[0x0149];
+  const romBanks = ROM_BANKS[romSizeCode] ?? 2;
+  let ramSizeBytes = RAM_SIZE_BYTES[ramSizeCode] ?? 0;
+  if ((cartType === 0x05 || cartType === 0x06) && ramSizeBytes === 0) {
+    ramSizeBytes = 512;
+  }
+  const ramBanks = cartType === 0x05 || cartType === 0x06 ? 1 : ramSizeBytes === 0 ? 0 : Math.max(1, Math.floor(ramSizeBytes / 0x2000));
+  const romSizeBytes = romBanks * 0x4000;
+  return {
+    title,
+    cartType,
+    romSizeCode,
+    ramSizeCode,
+    romBanks,
+    ramBanks,
+    romSizeBytes,
+    ramSizeBytes,
+  };
 }

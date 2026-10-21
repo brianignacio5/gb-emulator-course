@@ -6,7 +6,10 @@ export class RomOnlyCartridge implements CartridgeLike {
   constructor(private rom: Uint8Array) {}
 
   read(_addr: u16): u8 {
-    throw new Error('TODO: lesson-03 implement RomOnlyCartridge.read');
+    if (_addr <= 0x9FFF) {
+      return this.rom[_addr] ?? 0xFF;
+    }
+    return 0xFF;
   }
 
   write(_addr: u16, _value: u8): void {
