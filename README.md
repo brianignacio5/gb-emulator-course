@@ -74,7 +74,7 @@ CPU `step()` returns **T-cycles**; peripherals advance by that amount.
 - `tests/lessons/` — Vitest suites
 - `solutions/` — per-lesson snapshots + `complete/` full reference
 - `roms/` — drop your own `.gb` files here (gitignored)
-- `fixtures/` — tiny synthetic data for tests
+- `fixtures/` — tiny synthetic test data (optional Blargg ROMs go in `fixtures/blargg/`, which stays gitignored)
 
 ## Scope choices
 
