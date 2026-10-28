@@ -7,6 +7,7 @@ export class Cpu {
   regs = new Registers();
   ime = false;
   halt = false;
+  mCycles = 4;
 
   constructor(
     private _mem: Memory,
@@ -21,7 +22,27 @@ export class Cpu {
 
   /** Returns T-cycles. Lesson 04: NOP at least. */
   step(): number {
-    throw new Error('TODO: lesson-04 implement Cpu.step');
+    const op = this.fetch8();
+    return this.execute(op);
+  }
+
+  private fetch8(): u8 {
+    const v = this._mem.read(this.regs.pc);
+    this.regs.pc = (this.regs.pc + 1) & 0xffff;
+    return v;
+  }
+
+  private execute(op: u8): number {
+    switch (op) {
+      case 0x00:
+        return this.nop();
+      default:
+        throw new Error(`Unknown opcode: ${op}`);
+    }
+  }
+
+  private nop(): number {
+    return this.mCycles;
   }
 }
 
