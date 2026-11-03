@@ -122,6 +122,15 @@ export class Cpu {
         this.regs.a = this.fetch8();
         return 8;
       }
+
+      if (z === 4) {
+        this.setR(y, this.inc8(this.getR(y)));
+        return y === 6 ? 12 : 4;
+      }
+      if (z === 5) {
+        this.setR(y, this.dec8(this.getR(y)));
+        return y === 6 ? 12 : 4;
+      }
     }
 
     if (x === 1) {
@@ -133,6 +142,39 @@ export class Cpu {
         this.setR(y, this.getR(z));
         return y === 6 || z === 6 ? 8 : 4;
       }
+    }
+
+    if (x === 2) {
+      const v = this.getR(z);
+      switch (y) {
+        case 0: //ADD A, r8
+          this.regs.a = this.add8(this.regs.a, v, false);
+          break;
+        case 1: //ADC A, r8
+          this.regs.a = this.add8(this.regs.a, v, true);
+          break;
+        case 2: //SUB A, r8
+          this.regs.a = this.sub8(this.regs.a, v, false);
+          break;
+        case 3: //SBC A, r8
+          this.regs.a = this.sub8(this.regs.a, v, true);
+          break;
+        case 4: //AND A, r8
+          this.regs.a = this.and8(this.regs.a, v);
+          break;
+        case 5: //XOR A, r8
+          this.regs.a = this.xor8(this.regs.a, v);
+          break;
+        case 6: //OR A, r8
+          this.regs.a = this.or8(this.regs.a, v);
+          break;
+        case 7: //CP A, r8
+          this.cp8(this.regs.a, v);
+          break;
+        default:
+          break;
+      }
+      return z === 6 ? 8 : 4;
     }
 
     if (x === 3) {
@@ -170,6 +212,40 @@ export class Cpu {
       if (op === 0xFA) {
         this.regs.a = this.read8(this.fetch16());
         return 16;
+      }
+
+      if (z === 6) {
+        console.log(`z: ${z}, y: ${y}, op: ${op.toString(16)}`);
+        const v = this.fetch8();
+        switch (y) {
+          case 0: // ADD A, imm8
+            this.regs.a = this.add8(this.regs.a, v, false);
+            break;
+          case 1: // ADC A, imm8
+            this.regs.a = this.add8(this.regs.a, v, true);
+            break;
+          case 2: // SUB A, imm8
+            this.regs.a = this.sub8(this.regs.a, v, false);
+            break;
+          case 3: // SBC A, imm8
+            this.regs.a = this.sub8(this.regs.a, v, true);
+            break;
+          case 4: // AND A, imm8
+            this.regs.a = this.and8(this.regs.a, v);
+            break;
+          case 5: // XOR A, imm8
+            this.regs.a = this.xor8(this.regs.a, v);
+            break;
+          case 6:
+            this.regs.a = this.or8(this.regs.a, v);
+            break;
+          case 7: // CP A, imm8
+            this.cp8(this.regs.a, v);
+            break;
+          default:
+            throw new Error(`Invalid opcode: ${op.toString(16)} x: ${x}, y: ${y}, z: ${z}`);
+        }
+        return 8;
       }
     }
 
@@ -279,6 +355,62 @@ export class Cpu {
 
   private nop(): number {
     return this.mCycles;
+  }
+
+  private add8(a: u8, b: u8, carry: boolean): u8 {
+    const c = carry && this.regs.cy ? 1 : 0;
+    const sum = a + b + c;
+    const result = sum & 0xff;
+    const halfCarry = ((a & 0xf) + (b & 0xf) + c) > 0xf;
+    this.regs.setFlags(result === 0, false, halfCarry, sum > 0xff);
+    return result & 0xff;
+  }
+
+  private sub8(a: u8, b: u8, carry: boolean): u8 {
+    const c = carry && this.regs.cy ? 1 : 0;
+    const subResult = a- b - c;
+    const result = subResult & 0xff;
+    const halfCarry = ((a & 0xf) - (b & 0xf) - c) < 0;
+    this.regs.setFlags(result === 0, true, halfCarry, subResult < 0);
+    return result & 0xff;
+  }
+  
+  private and8(a: u8, b: u8): u8 {
+    const result = a & b;
+    this.regs.setFlags(result === 0, false, true, false);
+    return result & 0xff;
+  }
+
+  private xor8(a: u8, b: u8): u8 {
+    const result = a ^ b;
+    this.regs.setFlags(result === 0, false, false, false);
+    return result & 0xff;
+  }
+  
+  private or8(a: u8, b: u8): u8 {
+    const result = a | b;
+    this.regs.setFlags(result === 0, false, false, false);
+    return result & 0xff;
+  }
+
+  private cp8(a: u8, b: u8): void {
+    this.sub8(a, b, false);
+  }
+
+  private inc8(a: u8): u8 {
+    const result = (a + 1) & 0xff;
+    this.regs.z = result === 0;
+    this.regs.n = false;
+    this.regs.hFlag = (a & 0xf) === 0xf;
+    return result;
+  }
+
+  private dec8(a: u8): u8 {
+    const dec = (a - 1) & 0xff;
+    this.regs.z = dec === 0;
+    this.regs.n = true;
+    this.regs.hFlag = (a & 0xf) === 0;
+    return dec;
   }
 }
 
