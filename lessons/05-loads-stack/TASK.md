@@ -6,4 +6,4 @@
 4. Block 0 memory loads: `LD (r16mem), A` and `LD A, (r16mem)` (`z === 2`, `q` selects the direction). `HL+` / `HL-` update `HL` after the access. `LD (imm16), SP` is `0x08`.
 5. Block 3 (`x === 3`): `POP r16stk` is `q === 0 && z === 1` and reads `SP` (12 T-cycles). `PUSH r16stk` is `q === 0 && z === 5` and writes `SP` (16 T-cycles). Pair 3 is `AF`. The same `q` and `z` as step 3 with `x === 0` is the immediate load; here the pointer is `SP`.
 6. Block 3 loads that stay off the flags: `LDH (imm8), A`, `LDH A, (imm8)`, `LD (C), A`, `LD A, (C)`, `LD (imm16), A`, `LD A, (imm16)`, and `LD SP, HL`.
-7. Run `npm run test:lesson -- 05`
+7. Run `npm run test:lesson -- 05`. The test covers each family above: `LD r8, r8` and `LD r8, imm8`, including `(HL)`; `LD r16, imm16` for `BC` and `SP`; `LD (r16mem), A` and `LD A, (r16mem)` for `BC`, `DE`, `HL+`, and `HL-`; `LD (imm16), SP`; `PUSH`/`POP` of `BC` and `AF`; and the block 3 loads `LDH (imm8), A`, `LDH A, (imm8)`, `LD (C), A`, `LD A, (C)`, `LD (imm16), A`, `LD A, (imm16)`, and `LD SP, HL`. `LD HL, SP+imm8` (`0xF8`) stays in lesson 06.
