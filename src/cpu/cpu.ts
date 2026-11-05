@@ -66,6 +66,8 @@ export class Cpu {
     const p = (y >> 1) & 3; // Register Pairs (BC, DE, HL, SP) or AF for push pop
     const q = y & 1; // Which of two pair instructions sharing z
 
+    console.log(`x: ${x}, q: ${q}, z: ${z}, p: ${p}, op: ${op.toString(16)}`);
+
     if (x === 0) {
 
       if (op === 0x02) { // LD (BC), A
@@ -123,6 +125,13 @@ export class Cpu {
         return 8;
       }
 
+      if (op === 0x08) { // LD (a16), SP
+        const addr = this.fetch16();
+        this.write8(addr, this.regs.sp & 0xff);
+        this.write8(addr + 1, this.regs.sp >> 8);
+        return 20;
+      }
+
       if (z === 1) {
         if (q === 0) {
           const v = this.fetch16();
@@ -153,8 +162,6 @@ export class Cpu {
       }
 
       if (z === 7) {
-
-        console.log(` RLCA/RRCA/RLA/RRA: x: ${x}, q: ${q}, z: ${z}, p: ${p}, op: ${op.toString(16)}`);
         if (y === 0) { // RLCA
           const a = this.regs.a;
           const rlcaCarry = (a >> 7) & 1;
@@ -272,7 +279,6 @@ export class Cpu {
     }
 
     if (x === 3) {
-      console.log(`x: ${x}, q: ${q}, z: ${z}, p: ${p}, op: ${op.toString(16)}`);
       if (q === 0 && z === 1) {
         this.setR16(p, this.pop16(), true);
         return 12;
@@ -331,13 +337,16 @@ export class Cpu {
         this.regs.hl = r;
         return 12;
       }
+      if (op === 0xF9) { // LD SP, HL
+        this.regs.sp = this.regs.hl;
+        return 8;
+      }
       if (op === 0xFA) {
         this.regs.a = this.read8(this.fetch16());
         return 16;
       }
 
       if (z === 6) {
-        console.log(`z: ${z}, y: ${y}, op: ${op.toString(16)}`);
         const v = this.fetch8();
         switch (y) {
           case 0: // ADD A, imm8
