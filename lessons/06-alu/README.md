@@ -4,7 +4,7 @@ Arithmetic and logic write `A` and the flags in `F`. `INC` and `DEC` update one 
 
 Pan Docs draws these rows in the same four blocks: [CPU Instruction Set](https://gbdev.io/pandocs/CPU_Instruction_Set.html). Lesson 05 filled the load and stack rows. This lesson fills the arithmetic rows, including `LD HL, SP+imm8` (`0xF8`), which lesson 05 left unimplemented because it writes flags.
 
-`JR`, calls, returns, `RST`, and `HALT` are lesson 07. Opcode `0xCB` is lesson 08.
+`JR`, calls, returns, `RST`, `HALT`, and `STOP` (`0x10`) are lesson 07. Opcode `0xCB` is lesson 08.
 
 ## Flags
 

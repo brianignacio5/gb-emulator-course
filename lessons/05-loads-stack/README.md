@@ -43,7 +43,7 @@ Pan Docs uses these names for the numbers packed into `y`, `z`, and `p`.
 
 ## The four blocks
 
-Bits 7–6 select the block. This lesson uses the load and stack rows. `INC`/`DEC` and the ALU are lesson 06. Jumps, calls, and `HALT` are lesson 07.
+Bits 7–6 select the block. This lesson uses the load and stack rows. `INC`/`DEC` and the ALU are lesson 06. Jumps, calls, `HALT`, and `STOP` (`0x10`) are lesson 07.
 
 | `x` | Block | What lives here |
 | --- | --- | --- |

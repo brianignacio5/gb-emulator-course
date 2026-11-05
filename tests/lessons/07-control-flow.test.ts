@@ -49,6 +49,18 @@ describe('lesson 07 — control flow', () => {
     expect(c.regs.pc).toBe(0x0103);
   });
 
+  it('STOP consumes the padding byte and takes 4 T-cycles', () => {
+    const cpu = cpuAt([0x10, 0x00]);
+    const flags = cpu.regs.f;
+    const a = cpu.regs.a;
+    expect(cpu.step()).toBe(4);
+    expect(cpu.regs.pc).toBe(0x0102);
+    expect(cpu.regs.f).toBe(flags);
+    expect(cpu.halt).toBe(false);
+    expect(cpu.regs.sp).toBe(0xfffe);
+    expect(cpu.regs.a).toBe(a);
+  });
+
   it('JR NZ taken/not taken', () => {
     const rom = new Uint8Array(0x8000);
     rom.set([0x20, 0x02, 0x00, 0x00], 0x0100);

@@ -1,4 +1,11 @@
 # Task — Lesson 07
 
-1. Implement JP/JR/CALL/RET/RST and condition codes NZ/Z/NC/C.
-2. Run `npm run test:lesson -- 07`
+1. Keep the `x`, `y`, `z`, `p`, and `q` split from lesson 05. One condition helper covers `NZ`, `Z`, `NC`, and `C`: `cc` 0 is `Z` clear, 1 is `Z` set, 2 is `C` clear, 3 is `C` set. For `RET`, `JP`, and `CALL`, `cc` is `y` and only `y` of 0–3 is a condition. For `JR`, `cc` is `y - 4`.
+2. `STOP` (`0x10`) is block 0, `z === 0`, `y === 2`. `fetch8` discards the following byte. Return 4 T-cycles. `PC` advances by 2. Leave `A`, the pairs, `SP`, `F`, `ime`, and `halt` unchanged, and do not write memory.
+3. Block 0, `z === 0`: `JR imm8` is `0x18` and always takes 12 T-cycles. `JR NZ/Z/NC/C` are `0x20`, `0x28`, `0x30`, and `0x38`. Always read the offset. Taken is 12, not taken is 8. The offset is signed (`0x80`–`0xFF` means `imm8 - 256`) and is added to `PC` after the fetch, wrapping at 16 bits.
+4. `JP imm16` is `0xC3` (16 T-cycles) and reads a little-endian address with `fetch16`. Conditional `JP` is `z === 2 && y <= 3` (`0xC2`, `0xCA`, `0xD2`, `0xDA`): always `fetch16`, taken 16, not taken 12. `JP HL` is `0xE9`: `PC = HL`, 4 T-cycles, and `HL` is not read as a memory address. `0xCB`, `DI`, and `EI` share the `z === 3` column and stay in later lessons.
+5. `CALL imm16` is `0xCD` (24 T-cycles). `fetch16` runs first, so `push16` stores the address of the next instruction, then `PC` becomes the target. Conditional `CALL` is `z === 4 && y <= 3` (`0xC4`, `0xCC`, `0xD4`, `0xDC`): always `fetch16`, taken 24 and pushes, not taken 12 and does not push. `RET` is `0xC9` (16 T-cycles): `PC = pop16()`. Conditional `RET` is `z === 0 && y <= 3` (`0xC0`, `0xC8`, `0xD0`, `0xD8`): taken 20 and pops, not taken 8 and does not pop. Leave `RETI` (`0xD9`) unimplemented. The other `z === 0` rows stay the block 3 loads and `ADD SP, imm8` / `LD HL, SP+imm8` from lessons 05 and 06.
+6. Block 3, `z === 7`: `RST`. Push `PC`, then set `PC` to `y * 8`. Return 16 T-cycles. `0xC7` vectors to `0x0000`, then `0x08`, `0x10`, `0x18`, `0x20`, `0x28`, `0x30`, and `0x38` at `0xFF`.
+7. `HALT` is `0x76`. Set `halt` and return 4. At the top of `step()`, before `fetch8`, a set `halt` returns 4 and does not fetch. Leave the HALT bug unimplemented. Lesson 09 clears `halt`.
+8. `STOP`, `JR`, `JP`, `CALL`, `RET`, `RST`, and `HALT` leave `F` alone.
+9. Run `npm run test:lesson -- 07`. The test covers `JP a16` to `0x0200`, `JR imm8` of `+2` to `0x0104`, `CALL`/`RET` returning to `0x0103`, `JR NZ` taken when `Z` is clear, and `STOP` (`0x10 0x00`) returning 4 with `PC` at `0x0102`. The not-taken paths, `JP HL`, conditional `JP`/`CALL`/`RET`, `RST`, and `HALT` are still part of the lesson.
