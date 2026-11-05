@@ -22,6 +22,9 @@ export class Cpu {
 
   /** Returns T-cycles. Lesson 04: NOP at least. */
   step(): number {
+    if (this.halt) {
+      return 4;
+    }
     const op = this.fetch8();
     return this.execute(op);
   }
@@ -38,6 +41,7 @@ export class Cpu {
     return (hi << 8) | lo;
   }
 
+  /** Pop the value from the stack. */
   private pop16(): u16 {
     const lo = this.read8(this.regs.sp);
     this.regs.sp = (this.regs.sp + 1) & 0xffff;
@@ -46,6 +50,7 @@ export class Cpu {
     return (hi << 8) | lo;
   }
 
+  /** Push the value to the stack. */
   private push16(value: u16) {
     this.regs.sp = (this.regs.sp - 1) & 0xffff;
     this.write8(this.regs.sp, (value >> 8) & 0xff);
@@ -73,6 +78,9 @@ export class Cpu {
       if (op === 0x02) { // LD (BC), A
         this.write8(this.regs.bc, this.regs.a);
         return 8;
+      } else if (op === 0x10) { // STOP
+        this.fetch8(); // unused byte
+        return 4;
       } else if (op === 0x12) { // LD (DE), A
         this.write8(this.regs.de, this.regs.a);
         return 8;
@@ -93,7 +101,7 @@ export class Cpu {
       } else if (op === 0x26) { // LD H, d8
         this.regs.h = this.fetch8();
         return 8;
-      } else if (op === 0x36) {
+      } else if (op === 0x36) { // LD (HL), d8
         this.write8(this.regs.hl, this.fetch8());
         return 12;
       } else if (op === 0x0A) { // LD A, (BC)
@@ -130,6 +138,25 @@ export class Cpu {
         this.write8(addr, this.regs.sp & 0xff);
         this.write8(addr + 1, this.regs.sp >> 8);
         return 20;
+      }
+
+      if (op === 0x18) { // JR e8
+        const e = this.fetch8();
+        const off = e < 0x80 ? e : e - 0x100;
+        this.regs.pc = (this.regs.pc + off) & 0xffff;
+        return 12;
+      }
+
+      // JR NZ, e8 / JR Z, e8 / JR NC, e8 / JR C, e8
+      if (op === 0x20 || op === 0x28 || op === 0x30 || op === 0x38) {
+        const e = this.fetch8();
+        const cc = (op >> 3) & 3; // Condition code
+        if (this.cond(cc)) {
+          const off = e < 0x80 ? e : e - 0x100;
+          this.regs.pc = (this.regs.pc + off) & 0xffff;
+          return 12;
+        }
+        return 8;
       }
 
       if (z === 1) {
@@ -237,6 +264,7 @@ export class Cpu {
     if (x === 1) {
       if (op === 0x76) {
         // HALT
+        this.halt = true;
         return 4;
       } else {
         // LD r8, r8 0 1 dest(r8), src(r8)
@@ -346,6 +374,54 @@ export class Cpu {
         return 16;
       }
 
+      // RET JP CALL RETI
+      if (op === 0xC3) { // JP imm16ß
+        this.regs.pc = this.fetch16();
+        return 16;
+      }
+      if (op === 0xC2 || op === 0xCA || op === 0xD2 || op === 0xDA) {
+        const addr = this.fetch16();
+        if (this.cond((op >> 3) & 3)) {
+          this.regs.pc = addr;
+          return 16;
+        }
+        return 12;
+      }
+
+      // RET 
+      if (op === 0xC9) { // RET
+        this.regs.pc = this.pop16();
+        return 16;
+      }
+
+      // RET cc / RETI
+      if (op === 0xD0 || op === 0xD8 || op === 0xC0 || op === 0xC8) {
+        const cc = (op >> 3) & 3; // Condition code
+        if (this.cond(cc)) {
+          this.regs.pc = this.pop16();
+          return 16;
+        }
+        return 8;
+      }
+
+
+      // CALL cc / CALL
+      if (op === 0xCD) { // CALL imm16
+        const addr = this.fetch16();
+        this.push16(this.regs.pc);
+        this.regs.pc = addr;
+        return 16;
+      }
+      if (op === 0xC4 || op === 0xCC || op === 0xD4 || op === 0xDC) {
+        const addr = this.fetch16();
+        if (this.cond((op >> 3) & 3)) {
+          this.push16(this.regs.pc);
+          this.regs.pc = addr;
+          return 16;
+        }
+        return 12;
+      }
+
       if (z === 6) {
         const v = this.fetch8();
         switch (y) {
@@ -377,6 +453,12 @@ export class Cpu {
             throw new Error(`Invalid opcode: ${op.toString(16)} x: ${x}, y: ${y}, z: ${z}`);
         }
         return 8;
+      }
+
+      if (z === 7) {
+        this.push16(this.regs.pc);
+        this.regs.pc = y * 8;
+        return 16;
       }
     }
 
@@ -558,6 +640,21 @@ export class Cpu {
     this.regs.hFlag = ((this.regs.hl & 0xfff) + (v & 0xfff)) > 0xfff;
     this.regs.cy = sum > 0xffff;
     this.regs.hl = sum & 0xffff;
+  }
+
+  private cond(cc: number): boolean {
+    switch (cc) {
+      case 0:
+        return !this.regs.z;
+      case 1:
+        return this.regs.z;
+      case 2:
+        return !this.regs.cy;
+      case 3:
+        return this.regs.cy;
+      default:
+        throw new Error(`Invalid condition code: ${cc}`);
+    }
   }
 
   private rlc(v: u8): u8 {

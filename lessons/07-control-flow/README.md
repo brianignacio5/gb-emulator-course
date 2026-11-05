@@ -80,6 +80,8 @@ Conditional `JP` is `x === 3 && z === 2 && y <= 3`. Always `fetch16`. Taken is 1
 | `JP NC, imm16` | `0xD2` |
 | `JP C, imm16` | `0xDA` |
 
+The lesson test runs each of these to `0x0200`. Taken returns 16 and sets `PC` to `0x0200`. Not taken returns 12 and leaves `PC` at `0x0103`, the byte after the operand. `F` and `SP` stay as they were.
+
 `JP HL` is the single opcode `0xE9`. `PC` becomes `HL`. 4 T-cycles. It does not read the byte at `HL`, and `HL` stays as it was. `0xE9` shares `z === 1` with `POP` from lesson 05 (`q === 0`). `JP HL` is `q === 1` and `p === 2`. The same `q === 1` column also holds `RET` (`0xC9`), `RETI` (`0xD9`, lesson 09), and `LD SP, HL` (`0xF9`, lesson 05).
 
 `0xC3` is `z === 3` and `y === 0`. The other `z === 3` opcodes in block 3 are `0xCB` (lesson 08), `DI` (`0xF3`), and `EI` (`0xFB`) (lesson 09), plus the illegal opcodes. Only `y === 0` of that column is `JP`.
@@ -127,11 +129,15 @@ Block 3, `z === 7`. `y` picks the vector. Push `PC` (it already points at the ne
 | 6 | `0xF7` | `0x0030` |
 | 7 | `0xFF` | `0x0038` |
 
+The lesson test runs each of these with `SP = 0xFFFE`. The opcode is one byte at `0x0100`, so the pushed return address is `0x0101`: low byte at `0xFFFC`, high byte at `0xFFFD`, and `SP` becomes `0xFFFC`. `PC` becomes `y * 8`. The step returns 16. `F` stays as it was.
+
 ## `HALT`
 
 `0x76` sits in block 1, where `LD r8, r8` lives. `y === 6` and `z === 6` would be `LD (HL), (HL)`. That encoding is `HALT`. Lesson 05 left it unimplemented.
 
 Set `halt` and return 4 T-cycles. `PC` has already advanced past `0x76`. At the top of `step()`, before `fetch8`, a set `halt` returns 4 and does not fetch. Lesson 09 clears `halt` when an interrupt runs.
+
+The lesson test places `0x76 0x00` at `0x0100`. The first `step()` returns 4, sets `halt`, and leaves `PC` at `0x0101`. The second `step()` returns 4 again and leaves `PC` at `0x0101`, so the following `NOP` is not fetched. `F` and `SP` stay as they were.
 
 Pan Docs describes a HALT bug: with `IME` clear and an interrupt pending, the next opcode is read twice. Leave that bug for later. This lesson only sets the flag.
 
