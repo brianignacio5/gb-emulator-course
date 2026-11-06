@@ -460,9 +460,64 @@ export class Cpu {
         this.regs.pc = y * 8;
         return 16;
       }
+
+      if (op === 0xCB) {
+        return this.executeCb(this.fetch8());
+      }
     }
 
     throw new Error(`Unknown opcode: ${op.toString(16)}`);
+  }
+
+  private executeCb(op: u8): number {
+    const x = (op >> 6) & 3; // OP group bits
+    const y = (op >> 3) & 7; // Destination bits
+    const z = op & 7; // Source bits
+    const isHl = z === 6;
+    const cycles = isHl ? (x === 1 ? 12 : 16) : 8;
+    const r8 = this.getR(z);
+    if (x === 0) {
+      let r: u8;
+      switch (y) {
+        case 0:
+          r = this.rlc(r8);
+          break;
+        case 1:
+          r = this.rrc(r8);
+          break;
+        case 2:
+          r = this.rl(r8);
+          break;
+        case 3:
+          r = this.rr(r8);
+          break;
+        case 4:
+          r = this.sla(r8);
+          break;
+        case 5:
+          r = this.sra(r8);
+          break;
+        case 6:
+          r = this.swap(r8);
+          break;
+        case 7:
+          r = this.srl(r8);
+          break;
+        default:
+          throw new Error(`Invalid opcode: ${op.toString(16)} x: ${x}, y: ${y}, z: ${z}`);
+      }
+      this.setR(z, r);
+    }
+    if (x === 1) {
+      this.bit(y, r8);
+    }
+    if (x === 2) {
+      this.setR(z, (r8 & ~(1 << y)));
+    }
+    if (x === 3) {
+      this.setR(z, (r8 | (1 << y)));
+    }
+    return cycles;
   }
 
   private getR(i: number): u8 {
@@ -673,7 +728,7 @@ export class Cpu {
 
   private rl(v: u8): u8 {
     const c = (v >> 7) & 1;
-    const r = (v << 1 | (this.regs.cy ? 0x80 : 0)) & 0xff;
+    const r = (v << 1 | (this.regs.cy ? 1 : 0)) & 0xff;
     this.regs.setFlags(r === 0, false, false, c === 1);
     return r;
   }
@@ -683,6 +738,39 @@ export class Cpu {
     const r = ((v >> 1) | (this.regs.cy ? 0x80 : 0)) & 0xff;
     this.regs.setFlags(r === 0, false, false, c === 1);
     return r;
+  }
+
+  private sla(v: u8): u8 {
+    const c = (v >> 7) & 1;
+    const r = (v << 1) & 0xff;
+    this.regs.setFlags(r === 0, false, false, c === 1);
+    return r;
+  }
+
+  private sra(v: u8): u8 {
+    const c = v & 1;
+    const r = ((v >> 1) | (v & 0x80)) & 0xff; // Need to track the sign bit with | (v & 0x80)
+    this.regs.setFlags(r === 0, false, false, c === 1);
+    return r;
+  }
+
+  private swap(v: u8): u8 {
+    const r = ((v & 0x0f) << 4) | ((v & 0xf0) >> 4);
+    this.regs.setFlags(r === 0, false, false, false);
+    return r;
+  }
+
+  private srl(v: u8): u8 {
+    const c = v & 1;
+    const r = (v >> 1) & 0xff;
+    this.regs.setFlags(r === 0, false, false, c === 1);
+    return r;
+  }
+
+  private bit(b: number, v: u8): void {
+    this.regs.z = ((v >> b) & 1) === 0;
+    this.regs.n = false;
+    this.regs.hFlag = true;
   }
 }
 
