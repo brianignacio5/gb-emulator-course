@@ -7,6 +7,8 @@ export class Cpu {
   regs = new Registers();
   ime = false;
   halt = false;
+  imePending = false;
+  eiDelay = false;
   mCycles = 4;
 
   constructor(
@@ -22,11 +24,43 @@ export class Cpu {
 
   /** Returns T-cycles. Lesson 04: NOP at least. */
   step(): number {
+
+    if (this.imePending) {
+      this.ime = true;
+      this.imePending = false;
+    }
+    if (this.eiDelay) {
+      this.eiDelay = false;
+      this.imePending = true;
+    }
+
+    if (this.ime && this._interrupts) {
+      const pending = this._interrupts.pending();
+      if (pending) {
+        this.halt = false;
+        return this.serviceInterrupt(pending);
+      }
+    }
+
     if (this.halt) {
-      return 4;
+      const pending = this._interrupts &&
+        (this._interrupts.ie & this._interrupts.ifFlag & 0x1f) !== 0;
+      if (!this.ime && pending) {
+        this.halt = false;
+      } else {
+        return 4;
+      }
     }
     const op = this.fetch8();
     return this.execute(op);
+  }
+
+  private serviceInterrupt(pending: { bit: number; vector: number }): number {
+    this.ime = false;
+    this._interrupts!.acknowledge(pending.bit);
+    this.push16(this.regs.pc);
+    this.regs.pc = pending.vector;
+    return 20;
   }
 
   private fetch8(): u8 {
@@ -404,6 +438,12 @@ export class Cpu {
         return 8;
       }
 
+      if (op === 0xD9) { // RETI
+        this.regs.pc = this.pop16();
+        this.ime = true;
+        return 16;
+      }
+
 
       // CALL cc / CALL
       if (op === 0xCD) { // CALL imm16
@@ -463,6 +503,17 @@ export class Cpu {
 
       if (op === 0xCB) {
         return this.executeCb(this.fetch8());
+      }
+
+      if (op === 0xF3) { // DI
+        this.ime = false;
+        this.imePending = false;
+        this.eiDelay = false;
+        return 4;
+      }
+      if (op === 0xFB) { // EI
+        this.eiDelay = true;
+        return 4;
       }
     }
 
