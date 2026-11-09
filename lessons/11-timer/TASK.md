@@ -1,5 +1,5 @@
 # Task — Lesson 11
 
-1. Implement DIV/TIMA/TMA/TAC read/write and `step(cycles)`.
-2. Writing DIV resets the internal counter.
-3. Run `npm run test:lesson -- 11`
+1. `div` returns `(divCounter >> 8) & 0xff`. `step(cycles)` adds 1 to `divCounter` per T-cycle and wraps with `& 0xffff`. `read` returns `DIV`, `TIMA`, `TMA`, or `TAC | 0xf8` for `0xFF04`–`0xFF07`, and `0xFF` otherwise. `write` to `DIV` ignores the value and sets `divCounter` to 0. `write` to `TIMA` and `TMA` stores the byte. `write` to `TAC` stores `value & 0x07`.
+2. With `TAC` bit 2 set, increment `TIMA` when the selected bit of `divCounter` falls from 1 to 0. Bits 1–0 select bit 9, 3, 5, or 7 (every 1024, 16, 64, or 256 T-cycles). Clock that edge from `divCounter` during `step`. A falling edge is also a `DIV` write that clears a selected bit which was 1 while the timer is enabled, and a `TAC` write where `(enabled && selected bit)` goes from 1 to 0. On increment, `TIMA` wraps with `& 0xff`. When it becomes 0, set `TIMA` to `TMA` and call `onOverflow` in that same T-cycle. Leave the 4 T-cycle reload delay out. Leave bus wiring and `INT_TIMER` out. Tests set `onOverflow` themselves.
+3. Run `npm run test:lesson -- 11`. The test checks that `step(1024)` makes `div > 0` and `write(0xFF04, 0)` brings `div` back to 0, and that `TMA = 0xAB`, `TAC = 0x05`, a `DIV` reset, and `TIMA = 0xFF` fire `onOverflow` with `TIMA` reloaded to `0xAB`. It does not call `read`, and it does not check the other three speeds or a `DIV`/`TAC` write edge. Implement those anyway. Later timing depends on the same detector.
