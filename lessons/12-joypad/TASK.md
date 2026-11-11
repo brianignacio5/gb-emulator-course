@@ -1,5 +1,5 @@
 # Task — Lesson 12
 
-1. Implement `writeP1`, `readP1`, `setButton`.
-2. Fire `onInterrupt` on press transitions.
-3. Run `npm run test:lesson -- 12`
+1. Keep a boolean for each of the eight buttons, and a select byte that starts at `0x30`. `writeP1` stores `value & 0x30`. `readP1` builds an active-low nibble from `0x0F`, then clears d-pad bits when bit 4 is 0 and action-button bits when bit 5 is 0. Bit 0 is Right or A, bit 1 is Left or B, bit 2 is Up or Select, and bit 3 is Down or Start. When both select bits are 0, combine both groups on the same nibble. Return `0xC0 | select | low`.
+2. `setButton` stores the button and calls `onInterrupt` only on a released-to-pressed edge, including when that group is not selected. A release or a repeat press does not call it. Leave bus wiring and `INT_JOYPAD` out. Tests set `onInterrupt` themselves.
+3. Run `npm run test:lesson -- 12`. With no buttons down, `readP1` is `0xFF`, and `writeP1` keeps only bits 4–5: `0xFF` reads `0xFF`, `0x0F` and `0x00` read `0xCF`, `0x2F` reads `0xEF`, `0x1F` reads `0xDF`, and `0x30` reads `0xFF`. D-pad selected (`0x20`) reads Right `0xEE`, Left `0xED`, Up `0xEB`, Down `0xE7`. Buttons selected (`0x10`) reads A `0xDE`, B `0xDD`, Select `0xDB`, Start `0xD7`. Left and A held read `0xED` for the d-pad, `0xDE` for the buttons, and `0xFF` with neither group selected. Both groups selected (`0x00`) read `0xCE` for Right alone and for Right with A, and `0xC3` for Up with Start. `setButton` calls `onInterrupt` once for a new Start press, not on a repeat press or a release, again after that release, and for A while neither group is selected. Pressing Left with the d-pad selected reads `0xED`, and releasing it reads `0xEF`.
