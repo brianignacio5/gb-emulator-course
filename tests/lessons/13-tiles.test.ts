@@ -16,10 +16,15 @@ describe('lesson 13 — tiles & palette', () => {
   });
 
   it('applies BGP palette', () => {
-    // BGP = 0b11100100 → idx0→0,1→1,2→2,3→3
+    // 0xE4 = 0b11100100 → idx0→0,1→1,2→2,3→3
     expect(applyPalette(0, 0xe4)).toBe(0);
     expect(applyPalette(1, 0xe4)).toBe(1);
     expect(applyPalette(2, 0xe4)).toBe(2);
     expect(applyPalette(3, 0xe4)).toBe(3);
+    // 0x1B = 0b00011011 → idx0→3,1→2,2→1,3→0
+    expect(applyPalette(0, 0x1b)).toBe(3);
+    expect(applyPalette(1, 0x1b)).toBe(2);
+    expect(applyPalette(2, 0x1b)).toBe(1);
+    expect(applyPalette(3, 0x1b)).toBe(0);
   });
 });
