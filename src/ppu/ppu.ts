@@ -93,7 +93,7 @@ export class Ppu {
       const tileY = bgY >> 3;
       const row = bgY & 0x7;
       const mapAddress = mapBaseAddress + (tileY * 32) + tileX;
-      const tileDataBaseAddress = (this.lcdc & 0x10) !== 0 ? 0x8000 : 0x9000;
+      const tileDataBaseAddress = (this.lcdc & 0x10) !== 0 ? 0x8000 : 0x8800;
       let tileIndex = this._mem.read(mapAddress);
       if (signed) {
         tileIndex = tileIndex < 128 ? tileIndex : tileIndex - 256;
